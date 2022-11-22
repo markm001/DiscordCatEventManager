@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class CommandMapper (
     val commandMap: Map<String, SimpleCommand> = mapOf(
-        CommandEnum.PING.commandName to SimpleCommand(PingCommand(),
+        CommandEnum.PING.commandName to PingCommand(
             Commands.slash(CommandEnum.PING.commandName, "Send a test ping to yourself."))
     )
 ) {

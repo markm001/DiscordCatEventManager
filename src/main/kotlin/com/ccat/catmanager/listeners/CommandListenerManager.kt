@@ -21,7 +21,7 @@ class CommandListenerManager (
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
         try {
             val command: SimpleCommand = commandMap[event.name] ?: throw NoSuchElementException()
-            command.instance.executeCommand(event)
+            command.executeCommand(event)
         } catch (e: NoSuchElementException) { //TODO: Log this - Shouldn't happen, error in guild.CommandData
             e.printStackTrace()
         }
