@@ -14,7 +14,7 @@ class PingCommand(
         val channel: TextChannel = event.channel.asTextChannel()
         val member: Member? = event.member
 
-        channel.sendMessage("Pong for " + member?.asMention)
+        channel.sendMessage("Pong for " + member?.asMention + ", " + event.jda.gatewayPing + "ms")
             .onSuccess { m -> m.delete().queueAfter(20, TimeUnit.SECONDS) }.queue()
 
         event.reply("Ping has been sent.").setEphemeral(true).queue()
