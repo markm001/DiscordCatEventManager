@@ -12,14 +12,20 @@ class CreateEventCommand(
 ) : SimpleCommand(data) {
     override fun executeCommand(event: SlashCommandInteractionEvent) {
         val guild: Guild? = event.guild
-        val args: List<OptionMapping> = event.options
+        //TODO: Make valid exceptions
+        val topic: OptionMapping = event.getOption("topic") ?: throw Throwable("Invalid Argument")
+        val start: OffsetDateTime = OffsetDateTime
+            .parse(event.getOption("starttime")!!.asString) ?: throw Throwable("Invalid start time")
+        val end: OffsetDateTime = OffsetDateTime
+            .parse(event.getOption("endtime")!!.asString) ?: throw Throwable("Invalid end time")
 
         guild?.defaultChannel?.let {
             guild.createScheduledEvent(
-                args[1].asString,
+                topic.asString,
                 it.asMention,
-                OffsetDateTime.now(),
-                OffsetDateTime.now().plusDays(1))
+                start,
+                end
+            ).queue()
         }
     }
 }

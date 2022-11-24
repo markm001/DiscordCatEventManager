@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component
 @Component
 class CommandMapper (
     val eventCreateOptions: List<OptionData> = listOf(
-        OptionData(OptionType.STRING, "topic", "Add a topic for your event"),
-        OptionData(OptionType.STRING, "starttime", "Add a starting date").setAutoComplete(true),
-        OptionData(OptionType.STRING, "endtime", "Add an ending date").setAutoComplete(true)),
+        OptionData(OptionType.STRING, "topic", "Add a topic for your event").setRequired(true),
+        OptionData(OptionType.STRING, "starttime", "Add a starting date").setAutoComplete(true).setRequired(true),
+        OptionData(OptionType.STRING, "endtime", "Add an ending date").setAutoComplete(true).setRequired(true)),
 
     val commandMap: Map<String, SimpleCommand> = mapOf(
         CommandEnum.PING.commandName to PingCommand(

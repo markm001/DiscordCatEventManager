@@ -10,7 +10,6 @@ import net.dv8tion.jda.api.utils.ChunkingFilter
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
@@ -25,7 +24,6 @@ class JdaConfiguration(
     lateinit var shardManager: ShardManager
 
     @PostConstruct
-    @ConfigurationProperties("discord")
     fun buildJda() {
         val builder = DefaultShardManagerBuilder.createDefault(env.getProperty("TOKEN"))
 
