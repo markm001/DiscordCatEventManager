@@ -38,10 +38,13 @@ class CommandListenerManager(
         val currentInputValue: String = event.focusedOption.value
 
         val choicesList: Set<Choice> =
-            if (currentOptionName.contains("time")) {
-                autocompleteService.completeDateTime(currentInputValue)
-            } else {
-                setOf()
+            with(currentOptionName) {
+                when {
+                    contains("time") -> autocompleteService.completeDateTime(currentInputValue)
+                    equals("eventid") -> autocompleteService
+                        .completeScheduledGuildEvents(event.guild!!.scheduledEvents,currentInputValue)
+                    else -> setOf()
+                }
             }
         event.replyChoices(choicesList).queue()
     }

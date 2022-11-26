@@ -4,5 +4,6 @@ enum class CommandEnum(
     val commandName: String
 ) {
     PING("ping"),
-    EVENTCREATE("eventcreate")
+    EVENTCREATE("eventcreate"),
+    JOINEVENT("joinevent")
 }
