@@ -42,7 +42,8 @@ class CommandListenerManager(
                 when {
                     contains("time") -> autocompleteService.completeDateTime(currentInputValue)
                     equals("eventid") -> autocompleteService
-                        .completeScheduledGuildEvents(event.guild!!.scheduledEvents,currentInputValue)
+                        .completeScheduledGuildEvents(event.guild!!.scheduledEvents, currentInputValue)
+                    equals("zoneid") -> autocompleteService.completeZoneId(currentInputValue)
                     else -> setOf()
                 }
             }

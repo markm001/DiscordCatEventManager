@@ -3,7 +3,9 @@ package com.ccat.catmanager.commands
 import com.ccat.catmanager.commands.implementations.CreateEventCommand
 import com.ccat.catmanager.commands.implementations.JoinEventCommand
 import com.ccat.catmanager.commands.implementations.PingCommand
+import com.ccat.catmanager.commands.implementations.SetTimezoneCommand
 import com.ccat.catmanager.listeners.CommandEnum
+import com.ccat.catmanager.model.repository.UserTimezoneDao
 import com.ccat.catmanager.model.service.EventService
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
@@ -12,33 +14,47 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.springframework.stereotype.Component
 
 @Component
-class CommandMapper (
+class CommandMapper(
     val eventService: EventService,
+    val userTimezoneDao: UserTimezoneDao,
 
     val msgAppend: String = "Format: yyyy-MM-dd hh:mm | (default, if not set: GMT+1)",
 
     val eventCreateOptions: List<OptionData> = listOf(
         OptionData(OptionType.STRING, "topic", "Topic for your event").setRequired(true),
-        OptionData(OptionType.STRING, "starttime", "Starting DateTime. $msgAppend").setAutoComplete(true).setRequired(true),
-        OptionData(OptionType.STRING, "endtime", "Ending DateTime. $msgAppend").setAutoComplete(true).setRequired(true)),
+        OptionData(OptionType.STRING, "starttime", "Starting DateTime. $msgAppend").setAutoComplete(true)
+            .setRequired(true),
+        OptionData(OptionType.STRING, "endtime", "Ending DateTime. $msgAppend").setAutoComplete(true).setRequired(true)
+    ),
 
     val eventJoinOptions: List<OptionData> = listOf(
         OptionData(OptionType.STRING, "eventid", "EventId or String-Name").setAutoComplete(true).setRequired(true),
-        OptionData(OptionType.STRING, "starttime", "Starting DateTime. $msgAppend").setAutoComplete(true).setRequired(true),
-        OptionData(OptionType.STRING, "endtime", "Ending DateTime. $msgAppend").setAutoComplete(true).setRequired(true)),
+        OptionData(OptionType.STRING, "starttime", "Starting DateTime. $msgAppend").setAutoComplete(true)
+            .setRequired(true),
+        OptionData(OptionType.STRING, "endtime", "Ending DateTime. $msgAppend").setAutoComplete(true).setRequired(true)
+    ),
+
+    val timesetOptions: OptionData = OptionData(OptionType.STRING, "zoneid", "Enter a Zone-Id, such as: **Asia/Tokyo**").setAutoComplete(true).setRequired(true),
 
     val commandMap: Map<String, SimpleCommand> = mapOf(
         CommandEnum.PING.commandName to PingCommand(
-            Commands.slash(CommandEnum.PING.commandName, "Send a test ping to yourself.")),
+            Commands.slash(CommandEnum.PING.commandName, "Send a test ping to yourself.")
+        ),
         CommandEnum.EVENTCREATE.commandName to CreateEventCommand(
             Commands.slash(CommandEnum.EVENTCREATE.commandName, "Create a new Event.")
-                .addOptions(eventCreateOptions), eventService),
+                .addOptions(eventCreateOptions), eventService
+        ),
         CommandEnum.JOINEVENT.commandName to JoinEventCommand(
             Commands.slash(CommandEnum.JOINEVENT.commandName, "Suggest a time you would be willing to join")
-                .addOptions(eventJoinOptions),eventService)
+                .addOptions(eventJoinOptions), eventService
+        ),
+        CommandEnum.TIMESET.commandName to SetTimezoneCommand(
+            Commands.slash(CommandEnum.TIMESET.commandName, "Set your current Timezone")
+                .addOptions(timesetOptions), userTimezoneDao
+        )
     )
 ) {
-    fun getListCommandData() : List<CommandData> {
+    fun getListCommandData(): List<CommandData> {
         return commandMap.map { it.value.data }
     }
 }

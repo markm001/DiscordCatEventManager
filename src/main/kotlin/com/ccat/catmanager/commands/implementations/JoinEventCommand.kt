@@ -17,7 +17,7 @@ class JoinEventCommand(
 ) : SimpleCommand(data) {
 
     override fun executeCommand(event: SlashCommandInteractionEvent) {
-        event.deferReply().queue()
+        event.deferReply().setEphemeral(true).queue()
         try {
             val eventId: Long = event.getOption("eventid")!!.asLong
             val startFrame: LocalDateTime = LocalDateTime.parse(event.getOption("starttime")!!.asString)
@@ -44,27 +44,24 @@ class JoinEventCommand(
         } catch (e: Exception) {
             when (e) {
                 is NumberFormatException, is IllegalStateException -> {
-                    event.reply(
+                    event.hook.sendMessage(
                         "An error occurred parsing the **Event-Id**. " + e.message
                                 + ". Please check that you entered a valid Long value for the Id field."
                     )
-                        .setEphemeral(true)
                         .queue()
                 }
                 is IllegalArgumentException, is DateTimeParseException -> {
-                    event.reply(
+                    event.hook.sendMessage(
                         "An error occurred setting the **Date**. " + e.message
                                 + ". Please check if your chosen dates are valid."
                     )
-                        .setEphemeral(true)
                         .queue()
                 }
                 is EventIdNotFoundException -> {
-                    event.reply(
+                    event.hook.sendMessage(
                         "An error occurred retrieving the requested **Event**" + e.message
                                 + ". Please check that an Event with the Event-Id really exists."
                     )
-                        .setEphemeral(true)
                         .queue()
                 }
                 else -> throw e

@@ -67,4 +67,15 @@ class AutocompleteService {
             .map { Choice(it.name, it.idLong) }
             .toSet()
     }
+
+    /**
+     * All zoneIds -> filter(name) -> take max 25 -> return unique Choice(name,zoneId)
+     */
+    fun completeZoneId(inputValue: String): Set<Choice> {
+        return ZoneId.getAvailableZoneIds()
+            .filter { it.contains(inputValue) }
+            .take(25)
+            .map { Choice(it.toString(), it) }
+            .toSet()
+    }
 }
