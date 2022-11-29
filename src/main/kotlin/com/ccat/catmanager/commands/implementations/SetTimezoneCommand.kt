@@ -40,6 +40,7 @@ class SetTimezoneCommand(
                     )
                         .queue()
                 }
+                else -> throw ex
             }
         }
     }

@@ -3,7 +3,9 @@ package com.ccat.catmanager.model.service
 import com.ccat.catmanager.model.EventCreateRequest
 import com.ccat.catmanager.model.EventParticipantRequest
 import com.ccat.catmanager.model.entity.EventParticipantEntity
+import com.ccat.catmanager.model.entity.UserTimezoneEntity
 import com.ccat.catmanager.model.repository.EventParticipantDao
+import com.ccat.catmanager.model.repository.UserTimezoneDao
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.ScheduledEvent
 import org.springframework.stereotype.Service
@@ -13,17 +15,17 @@ import java.util.concurrent.CompletableFuture
 
 @Service
 class EventService(
-    val eventParticipantDao: EventParticipantDao
+    val eventParticipantDao: EventParticipantDao,
+    val userTimezoneDao: UserTimezoneDao
 ) {
-    //TODO: MOVE TO CONFIG!
-    private val serverZoneId = ZoneId.systemDefault()
-
     /**
      * Converts UserTimes to ZonedDateTime using set Timezone
      */
     fun createParticipantData(request: EventParticipantRequest): EventParticipantEntity {
-        val zonedStartTime: ZonedDateTime = request.startingTime.atZone(serverZoneId)
-        val zonedEndTime: ZonedDateTime = request.endingTime.atZone(serverZoneId)
+        val userZoneId: ZoneId = setUserZoneId(request.userId)
+
+        val zonedStartTime: ZonedDateTime = request.startingTime.atZone(userZoneId)
+        val zonedEndTime: ZonedDateTime = request.endingTime.atZone(userZoneId)
 
         return eventParticipantDao.save(
             EventParticipantEntity(
@@ -37,11 +39,12 @@ class EventService(
     }
 
     /**
+     * Get User Zone-Id
      * Convert request.time to OffsetDateTime -> return createEvent as CompletableFuture to queue
      */
     fun createEventData(request: EventCreateRequest, guild: Guild): CompletableFuture<ScheduledEvent> {
-        //TODO: Call Timezone Service for User Entity here!
-        val userZoneId: ZoneId = ZoneId.systemDefault()
+        val userZoneId: ZoneId = setUserZoneId(request.creatorId)
+
         val userZoneOffset: ZoneOffset = userZoneId.rules.getOffset(Instant.now())
 
         val startOffsetTime: OffsetDateTime = OffsetDateTime.of(request.startTime, userZoneOffset)
@@ -53,5 +56,17 @@ class EventService(
             startOffsetTime,
             endOffsetTime
         ).submit()
+    }
+
+    private fun setUserZoneId(userId: Long): ZoneId {
+        val userTimezoneResponse: Optional<UserTimezoneEntity> = userTimezoneDao.findById(userId)
+
+        val userZoneId: ZoneId = if (userTimezoneResponse.isPresent) {
+            userTimezoneResponse.get().zoneId
+        } else {
+            ZoneId.systemDefault()
+        }
+
+        return userZoneId
     }
 }

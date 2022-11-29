@@ -27,6 +27,7 @@ class CreateEventCommand(
                 .parse(event.getOption("endtime")!!.asString)
 
             val request = EventCreateRequest(
+                event.user.idLong,
                 topic,
                 defaultChannel,
                 start,
@@ -37,9 +38,10 @@ class CreateEventCommand(
                 event.reply("Event with Id:" + e.idLong + " has been created.")
                     .setEphemeral(true).queue()
 
-                e.manager.setDescription("Event has been scheduled to join, please use the " +
-                        "`/joinevent eventid:${e.idLong} [starttime] [endtime]` command to let the author know your" +
-                        "times of availability.")
+                e.manager.setDescription(
+                    "Event has been scheduled to join, please use the " +
+                            "`/joinevent eventid:${e.idLong} [starttime] [endtime]` command to let the author know your times of availability."
+                )
                     .queue()
             }
 
