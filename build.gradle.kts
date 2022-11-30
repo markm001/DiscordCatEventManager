@@ -30,6 +30,9 @@ dependencies {
 
 	implementation("net.dv8tion:JDA:5.0.0-alpha.22")
 	implementation("pw.chew:jda-chewtils:2.0-SNAPSHOT")
+
+	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("com.github.ben-manes.caffeine:caffeine:3.1.2")
 }
 
 tasks.withType<KotlinCompile> {

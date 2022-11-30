@@ -40,7 +40,7 @@ class CommandListenerManager(
         val choicesList: Set<Choice> =
             with(currentOptionName) {
                 when {
-                    contains("time") -> autocompleteService.completeDateTime(currentInputValue)
+                    contains("time") -> autocompleteService.completeDateTime(currentInputValue, event.user.idLong)
                     equals("eventid") -> autocompleteService
                         .completeScheduledGuildEvents(event.guild!!.scheduledEvents, currentInputValue)
                     equals("zoneid") -> autocompleteService.completeZoneId(currentInputValue)
