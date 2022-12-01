@@ -6,5 +6,6 @@ enum class CommandEnum(
     PING("ping"),
     EVENTCREATE("eventcreate"),
     JOINEVENT("joinevent"),
-    TIMESET("timeset")
+    TIMESET("timeset"),
+    EVENTVIEW("eventview")
 }

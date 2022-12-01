@@ -69,4 +69,8 @@ class EventService(
 
         return userZoneId
     }
+
+    fun getParticipantDataForEventId(eventId: Long): List<EventParticipantEntity>{
+        return eventParticipantDao.findByEventId(eventId)
+    }
 }

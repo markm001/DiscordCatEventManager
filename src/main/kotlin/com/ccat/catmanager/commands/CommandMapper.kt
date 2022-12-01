@@ -1,12 +1,10 @@
 package com.ccat.catmanager.commands
 
-import com.ccat.catmanager.commands.implementations.CreateEventCommand
-import com.ccat.catmanager.commands.implementations.JoinEventCommand
-import com.ccat.catmanager.commands.implementations.PingCommand
-import com.ccat.catmanager.commands.implementations.SetTimezoneCommand
+import com.ccat.catmanager.commands.implementations.*
 import com.ccat.catmanager.listeners.CommandEnum
 import com.ccat.catmanager.model.repository.UserTimezoneDao
 import com.ccat.catmanager.model.service.EventService
+import com.ccat.catmanager.model.service.EventViewService
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
@@ -16,6 +14,7 @@ import org.springframework.stereotype.Component
 @Component
 class CommandMapper(
     val eventService: EventService,
+    val eventViewService: EventViewService,
     val userTimezoneDao: UserTimezoneDao,
 
     val msgAppend: String = "Format: yyyy-MM-dd hh:mm | (default, if not set: GMT+1)",
@@ -32,6 +31,9 @@ class CommandMapper(
         OptionData(OptionType.STRING, "starttime", "Starting DateTime. $msgAppend").setAutoComplete(true)
             .setRequired(true),
         OptionData(OptionType.STRING, "endtime", "Ending DateTime. $msgAppend").setAutoComplete(true).setRequired(true)
+    ),
+    val eventViewOptions: List<OptionData> = listOf(
+        OptionData(OptionType.STRING, "eventid", "EventId or String-Name").setAutoComplete(true).setRequired(true)
     ),
 
     val timesetOptions: OptionData = OptionData(OptionType.STRING, "zoneid", "Enter a Zone-Id, such as: **Asia/Tokyo**").setAutoComplete(true).setRequired(true),
@@ -51,6 +53,10 @@ class CommandMapper(
         CommandEnum.TIMESET.commandName to SetTimezoneCommand(
             Commands.slash(CommandEnum.TIMESET.commandName, "Set your current Timezone")
                 .addOptions(timesetOptions), userTimezoneDao
+        ),
+        CommandEnum.EVENTVIEW.commandName to EventViewCommand(
+            Commands.slash(CommandEnum.EVENTVIEW.commandName, "View user times for an Event")
+                .addOptions(eventViewOptions), eventViewService
         )
     )
 ) {
