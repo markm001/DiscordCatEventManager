@@ -33,7 +33,8 @@ class CommandMapper(
         OptionData(OptionType.STRING, "endtime", "Ending DateTime. $msgAppend").setAutoComplete(true).setRequired(true)
     ),
     val eventViewOptions: List<OptionData> = listOf(
-        OptionData(OptionType.STRING, "eventid", "EventId or String-Name").setAutoComplete(true).setRequired(true)
+        OptionData(OptionType.STRING, "eventid", "EventId or String-Name").setAutoComplete(true).setRequired(true),
+        OptionData(OptionType.STRING, "zoneid", "Enter a Zone-Id, such as: **Africa/Cairo** to covert Event time data into").setAutoComplete(true).setRequired(false)
     ),
 
     val timesetOptions: OptionData = OptionData(OptionType.STRING, "zoneid", "Enter a Zone-Id, such as: **Asia/Tokyo**").setAutoComplete(true).setRequired(true),
