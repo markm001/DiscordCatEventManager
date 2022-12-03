@@ -1,52 +1,48 @@
 package com.ccat.catmanager.model.service
 
+import com.ccat.catmanager.model.EventViewResponse
 import com.ccat.catmanager.model.entity.EventParticipantEntity
-import org.springframework.data.domain.Range
 import org.springframework.stereotype.Service
-import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.temporal.ChronoUnit
-import java.util.function.BiPredicate
-import kotlin.random.Random
 
 @Service
 class EventViewService(
     private val eventService: EventService
 ) {
-    fun dateTimeEvaluation(eventId: Long) {
+    /**
+     * ResponseEntities: earliest - latest Time-Range -> generate Map<Time, List<UserId>>
+     * Take only most Participants -> Group consecutive Entries -> Most consecutive(overlapping) = Best Time
+     * Retrieve: Participants & Excluded
+     */
+    fun dateTimeEvaluation(eventId: Long, zoneId: ZoneId): EventViewResponse {
         val response: List<EventParticipantEntity> = eventService.getParticipantDataForEventId(eventId)
 
-        val bestDate: LocalDate = response
-            .groupBy({ it.startingTime.toLocalDate() }, { it.userId })
-            .maxByOrNull { it.value.size }!!
-            .key
-
-//        //for bestDate  :  earliest - latest
-
-        val allTimes: MutableSet<ZonedDateTime> = mutableSetOf()
-        val responseByBestDate = response.filter { it.startingTime.toLocalDate().equals(bestDate) }
-        responseByBestDate
-            .forEach {
-                allTimes.add(it.startingTime)
-                allTimes.add(it.endingTime)
+        val startAndEndTime: Pair<ZonedDateTime,ZonedDateTime> = response
+            .fold<EventParticipantEntity, MutableSet<ZonedDateTime>>(mutableSetOf()) { accu, item ->
+                accu.apply { addAll(setOf(item.startingTime, item.endingTime)) }
             }
-        val sortedTimes: List<ZonedDateTime> = allTimes.sorted()
-        val earliestTime = sortedTimes.first()
-        val latestTime = sortedTimes.last()
+            .sorted() // sort by time
+            .let { it.first() to it.last() } // earliest - latest
 
-        val timeRange: ClosedRange<ZonedDateTime> = earliestTime.rangeTo(latestTime)
+        val earliestTime = startAndEndTime.first
+        val latestTime = startAndEndTime.second
 
+        // [ 2022-12-02T19:00Z[UTC] , 2022-12-02T20:00Z[UTC] , 2022-12-02T21:00Z[UTC] , ... 2022-12-03T04:00Z[UTC] ]
         var dateTime: ZonedDateTime = earliestTime
-        val consideredDateTimeSet: MutableSet<ZonedDateTime> = mutableSetOf()
-        while(dateTime in timeRange) {
-            consideredDateTimeSet.add(dateTime)
+        val timeRangeIncrements: MutableSet<ZonedDateTime> = mutableSetOf()
+        while(dateTime in earliestTime.rangeTo(latestTime)) {
+            timeRangeIncrements.add(dateTime)
             dateTime = dateTime.plusHours(1)
         }
 
+        /**
+         * 2022-12-02T19:00Z[UTC] - [539078494252957005, 539078494252957004, ...]
+         * 2022-12-02T20:00Z[UTC] - [539078494252957001, 539078494252957005, 539078494252957004, ...]
+         */
         val groupedByTime: MutableMap<ZonedDateTime, Set<Long>> = mutableMapOf()
-        consideredDateTimeSet.forEach{ currentPointTime ->
-            groupedByTime.putAll(responseByBestDate
+        timeRangeIncrements.forEach{ currentPointTime ->
+            groupedByTime.putAll(response
                 .filter { currentPointTime in it.startingTime.rangeTo(it.endingTime) }
                 .groupBy({ currentPointTime }, { it.userId })
                 .mapValues { it.value.toSet() }
@@ -55,19 +51,57 @@ class EventViewService(
 
         val maxUsersAvailable: Int = groupedByTime.values.maxByOrNull { it.size }!!.size
 
-
-        //break into Groups of consecutive:
-        groupedByTime.filterValues { it.size == maxUsersAvailable }.keys
-            .fold(mutableListOf<ZonedDateTime>() to mutableListOf<List<ZonedDateTime>>() ) { (currentList, accumulator), currItem ->
-                if(currentList.isEmpty()) {
-                    mutableListOf(currItem) to accumulator
+        // Group consecutive entries (with most Users): -> startTime - endTime
+        val eventTimeWindow: Pair<ZonedDateTime, ZonedDateTime> = groupedByTime.filterValues { it.size == maxUsersAvailable }.keys
+            .fold(mutableListOf<ZonedDateTime>() to mutableListOf<List<ZonedDateTime>>()) { (currentList, accumulator), currTime ->
+                if (currentList.isEmpty()) {
+                    mutableListOf(currTime) to accumulator
                 } else {
-                    if(currItem.minusHours(1).equals(currentList.last())) { //group
-                        currentList.apply { add(currItem) } to accumulator
+                    if (currentList.last().plusHours(1).equals(currTime)) { //group
+                        currentList.apply { add(currTime) } to accumulator
                     } else {
-                        mutableListOf(currItem) to accumulator.apply { add(currentList) } //next
+                        mutableListOf(currTime) to accumulator.apply { add(currentList) } //next
                     }
                 }
-            }.let { it.second.apply { it.first } } //convert add list
+            }.let { it.second.apply { add(it.first) } } //convert add list
+            .maxByOrNull { it.size }
+            .let { it!!.first() to it.last() }
+
+        val participantIds: Set<Long> = groupedByTime
+            .filterKeys { it in eventTimeWindow.first.rangeTo(eventTimeWindow.second) }
+            .flatMap { it.value }
+            .toSet()
+
+        val excludedIds: Set<Long> = response
+            .filter { !participantIds.contains(it.userId) }
+            .map { it.userId }
+            .toSet()
+
+        //starting/ending/participants/non-participants/best-Date/min/max
+
+        val eventViewResponse =  EventViewResponse(
+            participantIds,
+            excludedIds,
+            eventTimeWindow.first,
+            eventTimeWindow.second,
+            earliestTime,
+            latestTime
+        )
+        return convertToZoneId(eventViewResponse, zoneId)
+    }
+
+    private fun convertToZoneId( response: EventViewResponse, zoneId: ZoneId): EventViewResponse {
+        if(zoneId == ZoneId.systemDefault()) {
+            return response
+        }
+
+        return EventViewResponse(
+            response.participantIds,
+            response.excludedIds,
+            response.suggestedStartTime.withZoneSameInstant(zoneId),
+            response.suggestedEndTime.withZoneSameInstant(zoneId),
+            response.earliestRequestedTime.withZoneSameInstant(zoneId),
+            response.latestRequestedTime.withZoneSameInstant(zoneId)
+        )
     }
 }
