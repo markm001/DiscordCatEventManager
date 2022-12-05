@@ -3,8 +3,12 @@ package com.ccat.catmanager.commands.implementations
 import com.ccat.catmanager.commands.SimpleCommand
 import com.ccat.catmanager.exceptions.EventIdNotFoundException
 import com.ccat.catmanager.model.EventViewResponse
+import com.ccat.catmanager.model.service.DateTimeDisplayService
 import com.ccat.catmanager.model.service.EventViewService
 import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.ScheduledEvent
+import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
@@ -13,7 +17,8 @@ import java.time.ZoneId
 
 class EventViewCommand(
     override val data: CommandData,
-    private val eventViewService: EventViewService
+    private val eventViewService: EventViewService,
+    private val displayService: DateTimeDisplayService
 
 ) : SimpleCommand(data) {
     override fun executeCommand(event: SlashCommandInteractionEvent) {
@@ -23,19 +28,64 @@ class EventViewCommand(
         try {
             val eventId: Long = (event.getOption("eventid")?.asLong
                 ?: throw EventIdNotFoundException("Event with requested Id, ${idOption?.asString} was not found."))
-            val zoneId: ZoneId = (ZoneId.of(event.getOption("zoneid")?.asString)
-                ?: ZoneId.systemDefault())
 
-            val evaluation: EventViewResponse = eventViewService.dateTimeEvaluation(eventId, zoneId)
+            val eventFromId: ScheduledEvent = (event.guild?.getScheduledEventById(eventId)
+                ?: throw EventIdNotFoundException("Event with Id:$eventId was not found."))
 
-            /**
-             * BUILD THE EMBED FROM EVALUATION DATA
-             */
-            val evaluationEmbed = EmbedBuilder()
-            evaluationEmbed.setFooter("All Times in: $zoneId Time")
 
-            event.hook.sendMessageEmbeds(evaluationEmbed.build()).queue()
+            val zoneIdOption: OptionMapping? = event.getOption("zoneid")
+            val response: EventViewResponse = eventViewService.dateTimeEvaluation(eventId)
+            var zoneId = ZoneId.systemDefault()
+            val evaluation: EventViewResponse = if (zoneIdOption != null) {
+                zoneId = ZoneId.of(zoneIdOption.asString)
+                displayService.convertToZoneId(response, zoneId)
+            } else { response }
 
+
+            val allUserIds: MutableSet<Long> = mutableSetOf<Long>()
+                .apply { addAll(evaluation.participantIds) }
+                .apply { addAll(evaluation.excludedIds) }
+
+            event.guild?.retrieveMembersByIds(allUserIds)?.onSuccess { memberList ->
+
+                val evaluationEmbed = EmbedBuilder()
+                evaluationEmbed.setTitle(Emoji.fromUnicode("U+1F389").asReactionCode + eventFromId.name)
+                evaluationEmbed.setFooter("⚠ All times displayed in $zoneId time")
+
+                // SUGGESTED TIME
+                evaluationEmbed.addField(
+                    "Suggested Time:",
+                    "From: ${displayService.convertToDisplay(evaluation.suggestedStartTime)} " +
+                            "\n Until: ${displayService.convertToDisplay(evaluation.suggestedEndTime)}",
+                    false
+                )
+
+                // PARTICIPANTS
+                val participantBuilder = retrieveMembers(evaluation.participantIds, memberList)
+                evaluationEmbed.addField(
+                    "Assigned Participants:",
+                    participantBuilder.toString(),
+                    false
+                )
+
+                // EARLIEST, LATEST TIME
+                evaluationEmbed.addField(
+                    "Earliest & latest Time:",
+                    "${displayService.convertToDisplay(evaluation.earliestRequestedTime)} " +
+                            "| ${displayService.convertToDisplay(evaluation.latestRequestedTime)}",
+                    false
+                )
+
+                // NON-PARTICIPANTS
+                val excludedBuilder = retrieveMembers(evaluation.excludedIds, memberList)
+                evaluationEmbed.addField(
+                    "Unassigned Members:",
+                    excludedBuilder.toString(),
+                    false
+                )
+
+                event.hook.sendMessageEmbeds(evaluationEmbed.build()).queue()
+            }
         } catch (ex: Exception) {
             when (ex) {
                 is DateTimeException -> {
@@ -55,5 +105,15 @@ class EventViewCommand(
                 else -> throw ex
             }
         }
+    }
+
+    private fun retrieveMembers(memberIdList: Set<Long>, memberList: MutableList<Member>): StringBuilder {
+        val participantBuilder = StringBuilder()
+        memberIdList.forEach { id ->
+            //TODO: LOG THIS!
+            val memberFromId: Member = memberList.find { it.idLong == id } ?: throw Exception()
+            participantBuilder.append("${memberFromId.asMention} |")
+        }
+        return participantBuilder
     }
 }

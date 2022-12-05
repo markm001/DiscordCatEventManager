@@ -3,6 +3,7 @@ package com.ccat.catmanager.commands
 import com.ccat.catmanager.commands.implementations.*
 import com.ccat.catmanager.listeners.CommandEnum
 import com.ccat.catmanager.model.repository.UserTimezoneDao
+import com.ccat.catmanager.model.service.DateTimeDisplayService
 import com.ccat.catmanager.model.service.EventService
 import com.ccat.catmanager.model.service.EventViewService
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -16,6 +17,7 @@ class CommandMapper(
     val eventService: EventService,
     val eventViewService: EventViewService,
     val userTimezoneDao: UserTimezoneDao,
+    val dateTimeDisplayService: DateTimeDisplayService,
 
     val msgAppend: String = "Format: yyyy-MM-dd hh:mm | (default, if not set: GMT+1)",
 
@@ -57,7 +59,7 @@ class CommandMapper(
         ),
         CommandEnum.EVENTVIEW.commandName to EventViewCommand(
             Commands.slash(CommandEnum.EVENTVIEW.commandName, "View user times for an Event")
-                .addOptions(eventViewOptions), eventViewService
+                .addOptions(eventViewOptions), eventViewService, dateTimeDisplayService
         )
     )
 ) {
