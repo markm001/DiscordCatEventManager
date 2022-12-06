@@ -6,6 +6,7 @@ import com.ccat.catmanager.model.repository.UserTimezoneDao
 import com.ccat.catmanager.model.service.DateTimeDisplayService
 import com.ccat.catmanager.model.service.EventService
 import com.ccat.catmanager.model.service.EventViewService
+import com.ccat.catmanager.model.service.ManagedEventService
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
@@ -18,6 +19,7 @@ class CommandMapper(
     val eventViewService: EventViewService,
     val userTimezoneDao: UserTimezoneDao,
     val dateTimeDisplayService: DateTimeDisplayService,
+    val manageEventService: ManagedEventService,
 
     val msgAppend: String = "Format: yyyy-MM-dd hh:mm | (default, if not set: GMT+1)",
 
@@ -37,6 +39,9 @@ class CommandMapper(
     val eventViewOptions: List<OptionData> = listOf(
         OptionData(OptionType.STRING, "eventid", "EventId or String-Name").setAutoComplete(true).setRequired(true),
         OptionData(OptionType.STRING, "zoneid", "Enter a Zone-Id, such as: **Africa/Cairo** to covert Event time data into").setAutoComplete(true).setRequired(false)
+    ),
+    val manageEventOptions: List<OptionData> = listOf(
+        OptionData(OptionType.STRING, "eventid", "EventId or String-Name").setAutoComplete(true).setRequired(true)
     ),
 
     val timesetOptions: OptionData = OptionData(OptionType.STRING, "zoneid", "Enter a Zone-Id, such as: **Asia/Tokyo**").setAutoComplete(true).setRequired(true),
@@ -60,6 +65,14 @@ class CommandMapper(
         CommandEnum.EVENTVIEW.commandName to EventViewCommand(
             Commands.slash(CommandEnum.EVENTVIEW.commandName, "View user times for an Event")
                 .addOptions(eventViewOptions), eventViewService, dateTimeDisplayService
+        ),
+        CommandEnum.MANAGE.commandName to ManageEventCommand(
+            Commands.slash(CommandEnum.MANAGE.commandName, "Set an Event to be managed by the Bot")
+                .addOptions(manageEventOptions), manageEventService
+        ),
+        CommandEnum.REMOVE.commandName to RemoveManagedEventCommand(
+            Commands.slash(CommandEnum.REMOVE.commandName, "Remove Event from the Bot management queue")
+                .addOptions(manageEventOptions), manageEventService
         )
     )
 ) {

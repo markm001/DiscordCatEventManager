@@ -7,5 +7,7 @@ enum class CommandEnum(
     EVENTCREATE("eventcreate"),
     JOINEVENT("joinevent"),
     TIMESET("timeset"),
-    EVENTVIEW("eventview")
+    EVENTVIEW("eventview"),
+    MANAGE("manage"),
+    REMOVE("remove")
 }
