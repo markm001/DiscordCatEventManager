@@ -28,10 +28,10 @@ class EventViewCommand(
 
         try {
             val eventId: Long = (event.getOption("eventid")?.asLong
-                ?: throw EventIdNotFoundException("Event with requested Id, ${idOption?.asString} was not found."))
+                ?: throw EventIdNotFoundException("Id, ${idOption?.asString} was not found"))
 
             val eventFromId: ScheduledEvent = (event.guild?.getScheduledEventById(eventId)
-                ?: throw EventIdNotFoundException("Event with Id:$eventId was not found."))
+                ?: throw EventIdNotFoundException("Id:$eventId was not found"))
 
 
             val zoneIdOption: OptionMapping? = event.getOption("zoneid")
