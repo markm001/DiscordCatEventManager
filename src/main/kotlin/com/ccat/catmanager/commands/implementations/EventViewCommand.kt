@@ -1,6 +1,7 @@
 package com.ccat.catmanager.commands.implementations
 
 import com.ccat.catmanager.commands.SimpleCommand
+import com.ccat.catmanager.exceptions.EventDataNotFoundException
 import com.ccat.catmanager.exceptions.EventIdNotFoundException
 import com.ccat.catmanager.model.EventViewResponse
 import com.ccat.catmanager.model.service.DateTimeDisplayService
@@ -35,6 +36,8 @@ class EventViewCommand(
 
             val zoneIdOption: OptionMapping? = event.getOption("zoneid")
             val response: EventViewResponse = eventViewService.dateTimeEvaluation(eventId)
+                ?: throw EventDataNotFoundException("${eventFromId.name} with Id:[$eventId]")
+
             var zoneId = ZoneId.systemDefault()
             val evaluation: EventViewResponse = if (zoneIdOption != null) {
                 zoneId = ZoneId.of(zoneIdOption.asString)
@@ -99,6 +102,20 @@ class EventViewCommand(
                     event.hook.sendMessage(
                         "An error occurred parsing the **Event-Id**. " + ex.message
                                 + ". Please check that you entered a valid Long value for the Id field."
+                    )
+                        .queue()
+                }
+                is EventDataNotFoundException -> {
+                    event.hook.sendMessage(
+                        "An error occurred retrieving the **Event**. " + ex.message
+                                + ". Users may have yet to participate in the event."
+                    )
+                        .queue()
+                }
+                is EventIdNotFoundException -> {
+                    event.hook.sendMessage(
+                        "An error occurred retrieving the requested **Event**" + ex.message
+                                + ". Please check that an Event with the Event-Id really exists."
                     )
                         .queue()
                 }

@@ -14,8 +14,10 @@ class EventViewService(
      * Take only most Participants -> Group consecutive Entries -> Most consecutive(overlapping) = Best Time
      * Retrieve: Participants & Excluded
      */
-    fun dateTimeEvaluation(eventId: Long): EventViewResponse {
+    fun dateTimeEvaluation(eventId: Long): EventViewResponse? {
         val response: List<EventParticipantEntity> = eventService.getParticipantDataForEventId(eventId)
+
+        if(response.isEmpty()) { return null }
 
         val startAndEndTime: Pair<ZonedDateTime, ZonedDateTime> = response
             .fold<EventParticipantEntity, MutableSet<ZonedDateTime>>(mutableSetOf()) { accu, item ->

@@ -21,7 +21,9 @@ class JdaConfiguration(
     @Autowired
     lateinit var env: Environment
 
-    lateinit var shardManager: ShardManager
+    companion object {
+        lateinit var shardManager: ShardManager
+    }
 
     @PostConstruct
     fun buildJda() {

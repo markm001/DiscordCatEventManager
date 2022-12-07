@@ -4,6 +4,7 @@ import com.ccat.catmanager.model.ManagedEventRequest
 import com.ccat.catmanager.model.entity.ManagedEventEntity
 import com.ccat.catmanager.model.repository.ManagedEventsDao
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.*
 
 @Service
@@ -20,16 +21,15 @@ class ManagedEventService(
         )
     }
 
-    fun removeManagedEvent(request: ManagedEventRequest): ManagedEventEntity {
-        val response = findManagedEntity(request)
-
-        managedEventsDao.deleteById(response.id)
-        return response
-    }
-
-    private fun findManagedEntity(request: ManagedEventRequest) =
-        managedEventsDao.findEventByIdAndGuildId(
+    @Transactional
+    fun removeManagedEvent(request: ManagedEventRequest):Int {
+        return managedEventsDao.deleteEventByIdAndGuild(
             request.eventId,
             request.guildId
         )
+    }
+
+    fun findAllManagedEvents(): List<ManagedEventEntity> {
+        return managedEventsDao.findAll()
+    }
 }
