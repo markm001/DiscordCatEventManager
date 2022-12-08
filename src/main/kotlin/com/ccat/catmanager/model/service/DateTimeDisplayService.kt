@@ -2,23 +2,19 @@ package com.ccat.catmanager.model.service
 
 import com.ccat.catmanager.model.EventViewResponse
 import org.springframework.stereotype.Service
-import java.time.DateTimeException
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 
 @Service
 class DateTimeDisplayService(
     val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd h:mm a")
 ) {
-    fun convertToDisplay(zonedDateTime: ZonedDateTime): String {
-        try {
-            return zonedDateTime.format(dateTimeFormat)
-        } catch (e: DateTimeException) {
-            //TODO: LOG THIS!
-            e.printStackTrace()
-        }
-        return zonedDateTime.toString()
+    fun display(zonedDateTime: ZonedDateTime): String {
+        return zonedDateTime.format(dateTimeFormat) ?: zonedDateTime.toString()
+    }
+
+    fun display(localDateTime: LocalDateTime): String {
+        return localDateTime.format(dateTimeFormat) ?: localDateTime.toString()
     }
 
     fun convertToZoneId(response: EventViewResponse, zoneId: ZoneId): EventViewResponse {

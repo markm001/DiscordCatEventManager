@@ -56,7 +56,7 @@ class CommandMapper(
         ),
         CommandEnum.JOINEVENT.commandName to JoinEventCommand(
             Commands.slash(CommandEnum.JOINEVENT.commandName, "Suggest a time you would be willing to join")
-                .addOptions(eventJoinOptions), eventService
+                .addOptions(eventJoinOptions), eventService, dateTimeDisplayService
         ),
         CommandEnum.TIMESET.commandName to SetTimezoneCommand(
             Commands.slash(CommandEnum.TIMESET.commandName, "Set your current Timezone")
