@@ -18,10 +18,10 @@ class CreateEventCommand(
 ) : SimpleCommand(data) {
 
     override fun executeCommand(event: SlashCommandInteractionEvent) {
-        val guild: Guild= event.guild ?: throw GuildInternalCommandException(" Used in ${event.channelType}")
-        val defaultChannel: DefaultGuildChannelUnion = guild.defaultChannel!!
-
         try {
+            val guild: Guild = event.guild ?: throw GuildInternalCommandException(" Used in ${event.channelType}")
+            val defaultChannel: DefaultGuildChannelUnion = guild.defaultChannel!!
+
             val topic: String = event.getOption("topic")?.asString ?: "Event ${event.idLong}"
             val start: LocalDateTime = LocalDateTime.parse(event.getOption("starttime")?.asString)
             val end: LocalDateTime = LocalDateTime.parse(event.getOption("endtime")?.asString)
@@ -36,7 +36,8 @@ class CreateEventCommand(
 
             eventService.createEventData(request, guild).whenComplete { scheduledEvent, error ->
                 if (error != null) {
-                    ResponseHandler.error(event, error.message ?: "Event could not be created. Please try again later.").queue()
+                    ResponseHandler.error(event, error.message ?: "Event could not be created. Please try again later.")
+                        .queue()
                     return@whenComplete
                 }
 

@@ -1,14 +1,14 @@
 package com.ccat.catmanager.commands.implementations
 
 import com.ccat.catmanager.commands.SimpleCommand
-import com.ccat.catmanager.exceptions.EventIdNotFoundException
 import com.ccat.catmanager.model.ManagedEventRequest
 import com.ccat.catmanager.model.entity.ManagedEventEntity
 import com.ccat.catmanager.model.service.ManagedEventService
-import net.dv8tion.jda.api.entities.ScheduledEvent
+import com.ccat.catmanager.util.ResponseHandler
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
-import net.dv8tion.jda.api.exceptions.ErrorResponseException
+import net.dv8tion.jda.api.exceptions.ErrorHandler
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
+import net.dv8tion.jda.api.requests.ErrorResponse
 
 class ManageEventCommand(
     override val data: CommandData,
@@ -19,9 +19,7 @@ class ManageEventCommand(
         event.deferReply().setEphemeral(true).queue()
 
         try {
-            val idOption = event.getOption("eventid")
-            val eventId: Long = (idOption?.asLong)
-                ?: throw NumberFormatException("${idOption?.asString} is not a valid Long.")
+            val eventId: Long = event.getOption("eventid")!!.asLong
 
             event.guild?.retrieveScheduledEventById(eventId)?.queue({
                 val response: ManagedEventEntity = managedEventService.addManagedEvent(
@@ -31,27 +29,28 @@ class ManageEventCommand(
                     )
                 )
 
-                event.hook.sendMessage(
+                ResponseHandler.success(
+                    event.hook,
+                    "Queued successfully",
                     "Event ${it.name} with Id:${response.eventId} has been added to the managing queue."
                 ).queue()
             },
-                { throw EventIdNotFoundException("${it.message}") } )
+                ErrorHandler()
+                    .handle(ErrorResponse.SCHEDULED_EVENT) {
+                        ResponseHandler.error(
+                            event.hook,
+                            it.message ?: "Please check if the chosen **Dates** are valid."
+                        ).queue()
+                    }
+            )
 
         } catch (e: Exception) {
             when (e) {
                 is NumberFormatException, is IllegalStateException -> {
-                    event.hook.sendMessage(
-                        "An error occurred parsing the **Event-Id**. " + e.message
-                                + ". Please check that you entered a valid Long value for the Id field."
-                    )
-                        .queue()
-                }
-                is EventIdNotFoundException -> {
-                    event.hook.sendMessage(
-                        "An error occurred retrieving the requested **Event**" + e.message
-                                + ". Please check that an Event with the Event-Id really exists."
-                    )
-                        .queue()
+                    ResponseHandler.error(
+                        event.hook,
+                        e.message ?: "Please check if the **Event-Id** is valid."
+                    ).queue()
                 }
                 else -> throw e
             }

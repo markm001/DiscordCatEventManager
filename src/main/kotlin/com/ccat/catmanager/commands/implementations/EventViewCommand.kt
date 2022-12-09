@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.exceptions.ErrorHandler
+import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.requests.ErrorResponse
 import java.time.DateTimeException
@@ -33,7 +34,14 @@ class EventViewCommand(
                     val response: EventViewResponse = eventViewService.dateTimeEvaluation(eventId)
                         ?: throw EventDataNotFoundException("${eventFromId.name} with Id:[$eventId]")
 
-                    val zoneId = ZoneId.of(event.getOption("zoneid")?.asString) ?: ZoneId.systemDefault()
+
+                    val zoneIdOption:OptionMapping? = event.getOption("zoneid")
+                    val zoneId: ZoneId = if(zoneIdOption != null) {
+                        try { ZoneId.of(zoneIdOption.asString) } catch (e:DateTimeException) { ZoneId.systemDefault() }
+                    } else {
+                        ZoneId.systemDefault()
+                    }
+
                     val evaluation: EventViewResponse = displayService.convertToZoneId(response, zoneId)
 
                     val allUserIds: MutableSet<Long> = mutableSetOf<Long>()
@@ -44,12 +52,14 @@ class EventViewCommand(
                         val evaluationEmbed = buildEvaluationEmbed(evaluation, memberList)
                         evaluationEmbed.setTitle(Emoji.fromUnicode("U+1F389").asReactionCode + eventFromId.name)
                         evaluationEmbed.setFooter("⚠ All times displayed in $zoneId time")
+
+                        event.hook.sendMessageEmbeds(evaluationEmbed.build()).queue()
                     }
                 },
                 handleErrors(event)
             )
-        } catch (e:Exception) {
-            when(e) {
+        } catch (e: Exception) {
+            when (e) {
                 is NumberFormatException -> {
                     ResponseHandler.error(
                         event.hook,
@@ -119,7 +129,7 @@ class EventViewCommand(
             .handle(ErrorResponse.SCHEDULED_EVENT) {
                 ResponseHandler.error(
                     event.hook,
-                    it.message ?: "Please check if the chosen **Dates** are valid."
+                    it.message ?: "Please check if the **Event-Id** is valid."
                 ).queue()
             }
             .handle(DateTimeException::class.java) {

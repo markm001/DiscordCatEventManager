@@ -34,8 +34,7 @@ class JoinEventCommand(
 
             if (startFrame.isAfter(endFrame) || startFrame.isEqual(endFrame)) {
                 throw InvalidDateException(
-                    "Cannot have an end-time before start-time.\n" +
-                            "$startDisplay - $endDisplay"
+                    "Cannot have an end-time before start-time.\n $startDisplay - $endDisplay"
                 )
             }
 
