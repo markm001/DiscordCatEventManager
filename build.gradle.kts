@@ -25,8 +25,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
 	implementation("com.mysql:mysql-connector-j:8.0.31")
-	implementation("org.flywaydb:flyway-core:9.10.0")
-	implementation("org.flywaydb:flyway-mysql:9.10.0")
+	implementation("org.flywaydb:flyway-core:9.10.1")
+	implementation("org.flywaydb:flyway-mysql:9.10.1")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
@@ -35,6 +35,9 @@ dependencies {
 
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.github.ben-manes.caffeine:caffeine:3.1.2")
+
+	//Logging:
+	implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
 }
 
 tasks.withType<KotlinCompile> {

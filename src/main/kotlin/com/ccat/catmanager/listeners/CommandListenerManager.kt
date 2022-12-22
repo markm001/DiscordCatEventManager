@@ -3,6 +3,8 @@ package com.ccat.catmanager.listeners
 import com.ccat.catmanager.commands.CommandMapper
 import com.ccat.catmanager.commands.SimpleCommand
 import com.ccat.catmanager.model.service.AutocompleteService
+import mu.KLogger
+import mu.KotlinLogging
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -14,8 +16,9 @@ import org.springframework.stereotype.Component
 class CommandListenerManager(
     val commandMapper: CommandMapper,
     val commandMap: Map<String, SimpleCommand> = commandMapper.commandMap,
+    val autocompleteService: AutocompleteService,
 
-    val autocompleteService: AutocompleteService
+    private val logger: KLogger = KotlinLogging.logger { }
 ) : ListenerAdapter() {
 
     override fun onGuildReady(event: GuildReadyEvent) {
@@ -28,8 +31,7 @@ class CommandListenerManager(
             val command: SimpleCommand = commandMap[event.name] ?: throw NoSuchElementException()
             command.executeCommand(event)
         } catch (e: NoSuchElementException) {
-            //TODO: Log this - Shouldn't happen, error in guild.CommandData
-            e.printStackTrace()
+            logger.error("guild.CommandData Error - A Slash-Command with the requested signature was not found!")
         }
     }
 

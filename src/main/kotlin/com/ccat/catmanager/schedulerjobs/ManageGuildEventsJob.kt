@@ -6,6 +6,8 @@ import com.ccat.catmanager.model.ManagedEventRequest
 import com.ccat.catmanager.model.entity.ManagedEventEntity
 import com.ccat.catmanager.model.service.EventViewService
 import com.ccat.catmanager.model.service.ManagedEventService
+import mu.KLogger
+import mu.KotlinLogging
 import net.dv8tion.jda.api.entities.Guild
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
@@ -16,7 +18,8 @@ import org.springframework.stereotype.Component
 class ManageGuildEventsJob(
     private val eventService: ManagedEventService,
     private val viewService: EventViewService,
-    private val expiredEventList: MutableList<ManagedEventEntity>
+    private val expiredEventList: MutableList<ManagedEventEntity>,
+    private val logger: KLogger = KotlinLogging.logger { }
 ) {
     @Scheduled(cron = "0 */10 * * * ?")
     fun updateEventBoard() {
@@ -25,9 +28,10 @@ class ManageGuildEventsJob(
         events.forEach { println("Managing: ${it.eventId} in Guild: ${it.guildId}") }
 
         events.forEach { eventEntity ->
-            //TODO: LOG THIS!
+            logger.info("Managing Event:${eventEntity.eventId} for Guild:${eventEntity.guildId}")
+
             val guild: Guild = JdaConfiguration.shardManager.getGuildById(eventEntity.guildId)
-                ?: throw Exception("This shouldn't happen! Incorrectly saved.")
+                ?: throw Exception("Guild with Id:${eventEntity.guildId} not found.")
 
             val eventViewData: EventViewResponse = viewService.dateTimeEvaluation(eventEntity.eventId)
                 ?: return@forEach
@@ -39,7 +43,7 @@ class ManageGuildEventsJob(
                     .setDescription("The event is currently being managed by the bot.").queue()
             },
                 {
-                    //TODO: LOG THIS
+                    logger.info("Event:${it.message} has expired. Appending Event to clean-up queue...")
                     expiredEventList.add(eventEntity)
                     return@queue
                 }

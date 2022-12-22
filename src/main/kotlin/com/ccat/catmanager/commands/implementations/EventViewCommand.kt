@@ -6,6 +6,8 @@ import com.ccat.catmanager.model.EventViewResponse
 import com.ccat.catmanager.model.service.DateTimeDisplayService
 import com.ccat.catmanager.model.service.EventViewService
 import com.ccat.catmanager.util.ResponseHandler
+import mu.KLogger
+import mu.KotlinLogging
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.emoji.Emoji
@@ -20,8 +22,9 @@ import java.time.ZoneId
 class EventViewCommand(
     override val data: CommandData,
     private val eventViewService: EventViewService,
-    private val displayService: DateTimeDisplayService
+    private val displayService: DateTimeDisplayService,
 
+    private val logger: KLogger = KotlinLogging.logger {  }
 ) : SimpleCommand(data) {
     override fun executeCommand(event: SlashCommandInteractionEvent) {
         event.deferReply().setEphemeral(true).queue()
@@ -117,7 +120,8 @@ class EventViewCommand(
     private fun retrieveMembers(memberIdList: Set<Long>, memberList: MutableList<Member>): StringBuilder {
         val participantBuilder = StringBuilder()
         memberIdList.forEach { id ->
-            //TODO: LOG THIS!
+            logger.info("Retrieving Member with Id:$id")
+
             val memberFromId: Member = memberList.find { it.idLong == id } ?: throw Exception()
             participantBuilder.append("${memberFromId.asMention} |")
         }

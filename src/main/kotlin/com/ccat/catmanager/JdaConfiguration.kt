@@ -1,6 +1,8 @@
 package com.ccat.catmanager
 
 import com.ccat.catmanager.listeners.CommandListenerManager
+import mu.KLogger
+import mu.KotlinLogging
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
@@ -16,7 +18,8 @@ import javax.annotation.PostConstruct
 
 @Component
 class JdaConfiguration(
-    private val commandListenerManager: CommandListenerManager
+    private val commandListenerManager: CommandListenerManager,
+    private val logger: KLogger = KotlinLogging.logger { }
 ) {
     @Autowired
     lateinit var env: Environment
@@ -48,7 +51,7 @@ class JdaConfiguration(
 
         shardManager = builder.build()
 
-        println("\n ✅ Initialization finished!")
+        logger.info("✅ Initialization finished!")
         shardManager.setStatus(OnlineStatus.ONLINE)
     }
 }
